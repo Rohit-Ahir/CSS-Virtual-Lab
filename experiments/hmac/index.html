@@ -4,345 +4,2709 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HMAC Authentication and Verification | Cryptography Virtual Lab</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="Generate and verify HMAC values using a secret key and analyze the effect of modifying the message or key in a virtual cryptography laboratory.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Variables matching the laboratory aesthetic */
+    :root {
+      --bg-canvas: #161210;
+      --bg-shell: #211b17;
+      --header-bg: #ab9382;
+      --header-text-dark: #221711;
+      --header-text-muted: #3d2d23;
+      --nav-tab-bar: #957d6e;
+      --tab-active-blue: #3b82f6;
+      --tab-active-blue-hover: #2563eb;
+      --tab-inactive-text: #2c1f17;
+      --tab-inactive-hover: rgba(0, 0, 0, 0.08);
+      --card-bg: #2d241f;
+      --card-border: #44372e;
+      --card-title: #c8b1a0;
+      --card-subtitle: #9b897b;
+      --text-main: #e2d7ce;
+      --text-muted: #a39285;
+      --input-bg: #191411;
+      --input-border: #4a3c33;
+      --input-focus: #3b82f6;
+      --accent-green: #3fb950;
+      --accent-green-bg: rgba(63, 185, 80, 0.12);
+      --accent-green-border: rgba(63, 185, 80, 0.35);
+      --accent-red: #f85149;
+      --accent-red-bg: rgba(248, 81, 73, 0.12);
+      --accent-red-border: rgba(248, 81, 73, 0.35);
+      --code-bg: #14100e;
+      --code-text: #7ee787;
+      --font-serif: 'Playfair Display', 'Source Serif 4', Georgia, serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 16px 60px 16px;
+      line-height: 1.6;
+    }
+
+    /* Outer Wrapper matching reference frame */
+    .lab-container {
+      width: 100%;
+      max-width: 1060px;
+      background: var(--bg-shell);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
+      border: 1px solid #332822;
+    }
+
+    /* Top beige header matching image exactly */
+    .lab-header {
+      background-color: var(--header-bg);
+      background-image: 
+        radial-gradient(circle at 92% 20%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.05) 45%, transparent 65%),
+        linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.05) 100%);
+      padding: 32px 42px 28px 42px;
+      position: relative;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    /* Decorative geometric wireframe circle in top right like the screenshot */
+    .lab-header::after {
+      content: '';
+      position: absolute;
+      right: 28px;
+      top: 14px;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.32);
+      pointer-events: none;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 85%);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--header-text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 22px;
+      transition: color 0.15s ease, transform 0.15s ease;
+    }
+
+    .back-link:hover {
+      color: var(--header-text-dark);
+      transform: translateX(-3px);
+    }
+
+    .lab-category {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--header-text-dark);
+      margin-bottom: 8px;
+    }
+
+    .lab-title {
+      font-family: var(--font-serif);
+      font-size: 38px;
+      font-weight: 700;
+      color: var(--header-text-dark);
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+
+    .lab-subtitle {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      color: var(--header-text-muted);
+      font-weight: 400;
+      max-width: 720px;
+    }
+
+    /* Navigation Tab Bar */
+    .lab-nav {
+      background-color: var(--nav-tab-bar);
+      display: flex;
+      gap: 8px;
+      padding: 10px 42px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--tab-inactive-text);
+      padding: 9px 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: var(--tab-inactive-hover);
+      color: #1a120d;
+    }
+
+    .tab-btn.active {
+      background-color: var(--tab-active-blue);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+    }
+
+    /* Tab Content Area */
+    .tab-content-container {
+      background-color: var(--bg-shell);
+      padding: 36px 42px 48px 42px;
+      min-height: 520px;
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Card Containers */
+    .lab-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 26px 30px;
+      margin-bottom: 24px;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .lab-card-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--card-title);
+      margin-bottom: 4px;
+      letter-spacing: -0.3px;
+    }
+
+    .lab-card-subtitle {
+      font-size: 13.5px;
+      color: var(--card-subtitle);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    /* Workflow Diagram Strip */
+    .flow-stepper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #231b17;
+      border: 1px solid #3a2e26;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 26px;
+      overflow-x: auto;
+      gap: 10px;
+    }
+
+    .flow-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-width: 100px;
+    }
+
+    .flow-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #392b23;
+      color: var(--card-title);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+      border: 1px solid #4a3a30;
+    }
+
+    .flow-step.active .flow-badge {
+      background: var(--tab-active-blue);
+      color: #fff;
+      border-color: #60a5fa;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    }
+
+    .flow-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .flow-arrow {
+      color: #554439;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    /* Presets Strip */
+    .preset-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 10px 14px;
+      background: #241c18;
+      border-radius: 8px;
+      border: 1px dashed #3e3129;
+    }
+
+    .preset-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--card-subtitle);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .chip-btn {
+      background: #33261f;
+      color: #d8c8bd;
+      border: 1px solid #4d3d34;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .chip-btn:hover {
+      background: #47352b;
+      color: #ffffff;
+      border-color: #634f43;
+    }
+
+    /* Form Layout */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #cebbb0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-label .hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: none;
+      font-weight: 400;
+    }
+
+    .input-control, .textarea-control, .select-control {
+      background-color: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      color: #f5ede6;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      padding: 10px 14px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      width: 100%;
+    }
+
+    .textarea-control {
+      resize: vertical;
+      min-height: 72px;
+      line-height: 1.5;
+    }
+
+    .input-control:focus, .textarea-control:focus, .select-control:focus {
+      outline: none;
+      border-color: var(--input-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+    }
+
+    .key-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .key-input-wrapper input {
+      padding-right: 76px;
+    }
+
+    .toggle-visibility-btn {
+      position: absolute;
+      right: 8px;
+      background: #2b211b;
+      border: 1px solid #48392f;
+      color: #c7b6a9;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 500;
+    }
+
+    .toggle-visibility-btn:hover {
+      background: #3b2e26;
+      color: #fff;
+    }
+
+    .mono-input {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      letter-spacing: 0.3px;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 22px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-primary {
+      background-color: var(--tab-active-blue);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--tab-active-blue-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-secondary {
+      background-color: #3b2e26;
+      color: #dfcfc3;
+      border: 1px solid #554438;
+    }
+
+    .btn-secondary:hover {
+      background-color: #4b3b31;
+      color: #ffffff;
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* Two-column layout in simulation */
+    .sim-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 860px) {
+      .sim-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sub-card {
+      background: #231b17;
+      border: 1px solid #3c2f26;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .sub-card-title {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: #d1bdb0;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .badge-tag {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-blue {
+      background: rgba(59, 130, 246, 0.18);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .badge-amber {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* Output Section Elements */
+    .output-box {
+      background-color: var(--code-bg);
+      border: 1px solid #382c23;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 10px;
+    }
+
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .output-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #a49182;
+    }
+
+    .copy-btn {
+      background: #281f1a;
+      border: 1px solid #43352b;
+      color: #c7b6a8;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: #392b23;
+      color: #fff;
+    }
+
+    .hex-display {
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--code-text);
+      word-break: break-all;
+      background: #0f0c0b;
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid #2d231c;
+      min-height: 48px;
+      user-select: all;
+    }
+
+    .hex-placeholder {
+      color: #655449;
+      font-style: italic;
+      user-select: none;
+    }
+
+    /* Verification Status Banner */
+    .verify-banner {
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 14px;
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .verify-banner.success {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: rgba(63, 185, 80, 0.16);
+      border: 1px solid rgba(63, 185, 80, 0.45);
+      color: #4ade80;
+    }
+
+    .verify-banner.failure {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: rgba(248, 81, 73, 0.16);
+      border: 1px solid rgba(248, 81, 73, 0.45);
+      color: #f87171;
+    }
+
+    .verify-icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .verify-content h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: inherit;
+    }
+
+    .verify-content p {
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: #e2e8f0;
+    }
+
+    .verify-details {
+      margin-top: 10px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: #cbd5e1;
+      background: rgba(0,0,0,0.4);
+      padding: 8px 12px;
+      border-radius: 4px;
+      word-break: break-all;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .verify-details strong {
+      color: #f8fafc;
+    }
+
+    /* Modification Analysis Section */
+    .analysis-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #3c2f26;
+      padding-bottom: 12px;
+    }
+
+    .analysis-tab-btn {
+      background: #251d18;
+      border: 1px solid #433329;
+      color: #baa799;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .analysis-tab-btn.active {
+      background: #3d2f26;
+      color: #ffffff;
+      border-color: #634f43;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .compare-card {
+      background: #221a16;
+      border: 1px solid #3a2d24;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .compare-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #cbb4a3;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .diff-container {
+      background: #110e0c;
+      border: 1px solid #2f241d;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.6;
+      word-break: break-all;
+      margin-top: 10px;
+    }
+
+    .diff-match {
+      color: #4ade80;
+    }
+
+    .diff-mismatch {
+      background: rgba(248, 81, 73, 0.3);
+      color: #ff7b72;
+      font-weight: bold;
+      padding: 1px 2px;
+      border-radius: 2px;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      background: #1c1512;
+      border: 1px solid #382c23;
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-num {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e5d7cc;
+      font-family: var(--font-mono);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .explanation-callout {
+      background: #231b17;
+      border-left: 4px solid var(--tab-active-blue);
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: #d8c7bb;
+      margin-top: 16px;
+    }
+
+    .explanation-callout strong {
+      color: #fff;
+    }
+
+    /* Theory and Procedure Stylings */
+    .prose {
+      color: #d6c6b9;
+      font-size: 14.5px;
+      line-height: 1.7;
+    }
+
+    .prose h3 {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      color: #e8d9cc;
+      margin: 22px 0 10px 0;
+    }
+
+    .prose p {
+      margin-bottom: 14px;
+    }
+
+    .prose ul, .prose ol {
+      margin-left: 22px;
+      margin-bottom: 16px;
+    }
+
+    .prose li {
+      margin-bottom: 8px;
+    }
+
+    .formula-box {
+      background: #191310;
+      border: 1px solid #3d2e24;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      font-family: var(--font-mono);
+      color: #e6dbd1;
+      text-align: center;
+      font-size: 14.5px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .info-card {
+      background: #241c17;
+      border: 1px solid #3d2f26;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .info-card h4 {
+      font-family: var(--font-serif);
+      color: #d8c4b4;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    /* Quiz Styling */
+    .quiz-question-card {
+      background: #231b17;
+      border: 1px solid #3d2e24;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .quiz-q-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f1e4da;
+      margin-bottom: 14px;
+      line-height: 1.45;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quiz-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #1b1512;
+      border: 1px solid #352820;
+      border-radius: 6px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .quiz-option:hover {
+      background: #281f1a;
+      border-color: #4b3b30;
+    }
+
+    .quiz-option input[type="radio"] {
+      accent-color: var(--tab-active-blue);
+      cursor: pointer;
+    }
+
+    .quiz-option.correct {
+      background: rgba(63, 185, 80, 0.15) !important;
+      border-color: #3fb950 !important;
+      color: #7ee787;
+    }
+
+    .quiz-option.incorrect {
+      background: rgba(248, 81, 73, 0.15) !important;
+      border-color: #f85149 !important;
+      color: #ff7b72;
+    }
+
+    .quiz-feedback {
+      margin-top: 10px;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: none;
+      line-height: 1.4;
+    }
+
+    .quiz-feedback.show-correct {
+      display: block;
+      background: var(--accent-green-bg);
+      color: #7ee787;
+      border: 1px solid var(--accent-green-border);
+    }
+
+    .quiz-feedback.show-incorrect {
+      display: block;
+      background: var(--accent-red-bg);
+      color: #ff7b72;
+      border: 1px solid var(--accent-red-border);
+    }
+
+    .quiz-summary-box {
+      background: #1c1511;
+      border: 1px solid #433429;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      margin-top: 24px;
+      display: none;
+    }
+
+    /* Validation Toast / Notice */
+    .validation-alert {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fcd34d;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* Simulation Mode Switcher */
+    .mode-switcher-container {
+      background: #1d1612;
+      border: 1px solid #3d2f26;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 22px;
+    }
+
+    .mode-switcher-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .mode-switcher-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #dfcfc3;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+    }
+
+    .mode-switcher-hint {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mode-tab-btn {
+      background: #2b201a;
+      border: 1px solid #4a382e;
+      border-radius: 8px;
+      color: #d1c0b3;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex: 1;
+      min-width: 240px;
+      justify-content: center;
+    }
+
+    .mode-tab-btn:hover:not(.active) {
+      background: #392b23;
+      color: #ffffff;
+      border-color: #5c473a;
+    }
+
+    .mode-tab-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #60a5fa;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .mode-tab-icon {
+      font-size: 16px;
+    }
+
+    /* In-Transit Network Channel */
+    .channel-card {
+      background: #191310;
+      border: 1px dashed #523f33;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 22px;
+    }
+
+    .channel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .channel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 700;
+      color: #e5d7cc;
+    }
+
+    .channel-pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #3b82f6;
+      box-shadow: 0 0 8px #3b82f6;
+      animation: channelPulse 1.8s infinite;
+    }
+
+    @keyframes channelPulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .channel-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .packet-display {
+      display: flex;
+      align-items: center;
+      background: #120e0c;
+      border: 1px solid #362921;
+      border-radius: 8px;
+      padding: 10px 14px;
+      gap: 10px;
+      overflow-x: auto;
+      margin-bottom: 14px;
+    }
+
+    .packet-chunk {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 120px;
+    }
+
+    .chunk-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #9c897c;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .chunk-val {
+      font-size: 11.5px;
+      color: #7ee787;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 230px;
+    }
+
+    .packet-delim {
+      font-size: 16px;
+      font-weight: bold;
+      color: #5d483b;
+    }
+
+    .channel-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .channel-actions-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #d1c0b3;
+    }
+
+    .chip-active {
+      background: #2563eb !important;
+      color: #ffffff !important;
+      border-color: #60a5fa !important;
+    }
+
+    /* Decryption Result Box */
+    .decrypted-box {
+      background: rgba(63, 185, 80, 0.08);
+      border: 1px solid rgba(63, 185, 80, 0.35);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 14px;
+    }
+
+    .decrypted-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .decrypted-badge {
+      color: #7ee787;
+      font-weight: 700;
+      font-size: 13.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .decrypted-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #9cb19f;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .decrypted-text {
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 600;
+      color: #f0fdf4;
+      background: #0f1c13;
+      border: 1px solid #1e452a;
+      border-radius: 6px;
+      padding: 12px 14px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .decrypted-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: #8fa593;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .hmac-decrypt-explainer {
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: #231b17;
+      border: 1px dashed #4e3c31;
+      border-radius: 8px;
+    }
+
+    /* ========================================== */
+    /* 5-Step Educational Simulation Output Styles */
+    /* ========================================== */
+    .simulation-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sim-step {
+      background: #231b17;
+      border: 1px solid #3c2f26;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .sim-step.completed {
+      border-color: #3fb950;
+      box-shadow: 0 0 0 1px rgba(63, 185, 80, 0.2);
+    }
+
+    .sim-step.active:not(.completed) {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+    }
+
+    .sim-step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: #1c1512;
+      border-bottom: 1px solid #3c2f26;
+    }
+
+    .sim-step-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #392b23;
+      color: var(--card-title);
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #4a3a30;
+      flex-shrink: 0;
+    }
+
+    .sim-step.completed .sim-step-badge {
+      background: #3fb950;
+      color: #fff;
+      border-color: #63e671;
+    }
+
+    .sim-step.active:not(.completed) .sim-step-badge {
+      background: #3b82f6;
+      color: #fff;
+      border-color: #60a5fa;
+    }
+
+    .sim-step-title {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 600;
+      color: #e5d7cc;
+      flex: 1;
+    }
+
+    .sim-step-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sim-step-status.completed {
+      background: rgba(63, 185, 80, 0.15);
+      color: #7ee787;
+    }
+
+    .sim-step-status.pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fcd34d;
+    }
+
+    .sim-step-content {
+      padding: 18px;
+    }
+
+    .sim-explanation {
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: #1c1512;
+      border: 1px solid #382c23;
+      border-radius: 8px;
+      border-left: 3px solid #3b82f6;
+    }
+
+    .sim-explanation h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fcd34d;
+      margin-bottom: 6px;
+    }
+
+    .sim-explanation p {
+      font-size: 12.5px;
+      color: #c7b6a9;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .sim-formula {
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #14100e;
+      border: 1px solid #2d231c;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: #93c5fd;
+      text-align: center;
+    }
+
+    .sim-io-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .sim-io-card {
+      background: #191310;
+      border: 1px solid #382c23;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .sim-io-card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .sim-io-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #9b897b;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .sim-io-value {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      color: #e5d7cc;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    .sim-packet {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 14px;
+      background: #120e0c;
+      border: 1px solid #362921;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+
+    .sim-packet-chunk {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 140px;
+    }
+
+    .sim-packet-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #9c897c;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .sim-packet-value {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: #7ee787;
+      word-break: break-all;
+    }
+
+    .sim-packet-delim {
+      font-size: 18px;
+      font-weight: bold;
+      color: #5d483b;
+    }
+
+    .sim-tamper-info {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 6px;
+      color: #fcd34d;
+      font-size: 12.5px;
+    }
+
+    .sim-phase {
+      margin-top: 16px;
+      padding: 14px;
+      background: #1c1512;
+      border: 1px solid #382c23;
+      border-radius: 8px;
+    }
+
+    .sim-phase h4 {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #fcd34d;
+      margin-bottom: 10px;
+    }
+
+    .sim-verdict {
+      margin-top: 12px;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .sim-verdict.success {
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+      color: #7ee787;
+    }
+
+    .sim-verdict.failure {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #f87171;
+    }
+
+    @media (max-width: 768px) {
+      .sim-io-grid {
+        grid-template-columns: 1fr;
+      }
+      .sim-packet {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .sim-packet-delim {
+        text-align: center;
+        transform: rotate(90deg);
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="lab-experiment-container">
 
-    <!-- SECTION 1: OBJECTIVE (Must contain exactly one h1) -->
-    <section id="objective" class="lab-section">
-      <span class="lab-section-tag">Objective</span>
-      <h1 class="lab-section-title">HMAC Authentication and Verification</h1>
-      <p>
-        The objective of this laboratory experiment is to understand, implement, and analyze the mathematical structure and cryptographic properties of Keyed-Hash Message Authentication Codes (HMAC) as defined in <strong>RFC 2104</strong> and <strong>NIST FIPS PUB 198-1</strong>.
-      </p>
-      <div class="lab-callout">
-        <strong>Core Learning Objectives:</strong>
-        <ul>
-          <li>Understand why simple unkeyed hash functions (like raw SHA-256) and naive concatenation <code>Hash(Key || Message)</code> fail to protect against length-extension and spoofing attacks.</li>
-          <li>Trace the RFC 2104 nested two-pass construction using the derived key <code>K'</code>, inner pad constant <code>ipad (0x36)</code>, and outer pad constant <code>opad (0x5C)</code>.</li>
-          <li>Simulate message transmission across an untrusted network and observe how unauthorized message tampering or key mismatch leads to immediate verification failure.</li>
-          <li>Analyze the <strong>Avalanche Effect</strong> by quantifying bit-level Hamming distances between digests when altering single characters in the message or secret key.</li>
-          <li>Distinguish the operational boundaries between encryption (confidentiality) and HMAC (integrity and authenticity).</li>
-        </ul>
-      </div>
-    </section>
+  <div class="lab-container">
+    
+    <!-- Top Beige Header (Matching Screenshot Reference) -->
+    <header class="lab-header">
+      <a href="../../index.html" class="back-link" id="backToBrowser">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to experiment browser
+      </a>
+      <div class="lab-category">CSS TH ISE • CRYPTOGRAPHIC SECURITY SYSTEMS</div>
+      <h1 class="lab-title">HMAC Authentication and Verification</h1>
+      <p class="lab-subtitle">Generate, verify, and analyze HMAC values using a secret key.</p>
+    </header>
 
-    <!-- SECTION 2: THEORY -->
-    <section id="theory" class="lab-section">
-      <span class="lab-section-tag">Theory</span>
-      <h2 class="lab-section-title">Cryptographic Theory &amp; RFC 2104 Construction</h2>
+    <!-- Navigation Tab Bar (Matching Screenshot Reference) -->
+    <nav class="lab-nav" role="tablist">
+      <button class="tab-btn" id="tabBtnTheory" data-tab="theory" role="tab" aria-selected="false">Theory</button>
+      <button class="tab-btn" id="tabBtnProcedure" data-tab="procedure" role="tab" aria-selected="false">Procedure</button>
+      <button class="tab-btn active" id="tabBtnSimulation" data-tab="simulation" role="tab" aria-selected="true">Simulation</button>
+      <button class="tab-btn" id="tabBtnQuiz" data-tab="quiz" role="tab" aria-selected="false">Quiz</button>
+    </nav>
 
-      <h3>1. What is an HMAC?</h3>
-      <p>
-        A <strong>Keyed-Hash Message Authentication Code (HMAC)</strong> is a specific construction for calculating a message authentication code involving a cryptographic hash function in combination with a shared secret key. It verifies both data integrity and the authenticity of a message.
-      </p>
+    <!-- Tab Content Container -->
+    <main class="tab-content-container">
 
-      <h3>2. The RFC 2104 Mathematical Specification</h3>
-      <p>
-        Let <code>H</code> denote the underlying cryptographic hash function (such as SHA-256), <code>B</code> denote the block length of the hash function in bytes (64 bytes for SHA-256), and <code>L</code> denote the hash output length in bytes (32 bytes / 256 bits for SHA-256).
-      </p>
-      <div class="lab-monitor">
-        <code>HMAC(K, m) = H((K' ⊕ opad) ∥ H((K' ⊕ ipad) ∥ m))</code>
-      </div>
-      <p>The components of the formula operate as follows:</p>
-      <ul>
-        <li><strong>Derived Key (K'):</strong> If the shared secret key <code>K</code> is longer than block size <code>B</code> (64 bytes), it is hashed first: <code>K' = H(K)</code>. If <code>K</code> is shorter than <code>B</code>, it is padded with zeroes on the right up to <code>B</code> bytes.</li>
-        <li><strong>Inner Pad (ipad):</strong> The constant byte <code>0x36</code> repeated <code>B</code> (64) times.</li>
-        <li><strong>Outer Pad (opad):</strong> The constant byte <code>0x5C</code> repeated <code>B</code> (64) times.</li>
-        <li><strong>⊕:</strong> Bitwise Exclusive-OR (XOR) operation.</li>
-        <li><strong>∥:</strong> Data concatenation.</li>
-      </ul>
-
-      <h3>3. Why Not Just Hash <code>H(Key ∥ Message)</code>?</h3>
-      <p>
-        A naive approach to message authentication would be computing <code>H(Key ∥ Message)</code>. However, for iterated hash functions based on the <strong>Merkle-Damgård construction</strong> (such as MD5, SHA-1, SHA-256, and SHA-512), this naive concatenation is severely vulnerable to <strong>Length Extension Attacks</strong>.
-      </p>
-      <p>
-        In a length extension attack, an attacker who observes the digest <code>H(Key ∥ Message)</code> and knows the length of the original message can reconstruct the internal compression state of the hash function, append arbitrary malicious data, and compute a valid digest for the extended message without knowing the secret key.
-      </p>
-      <p>
-        The nested two-pass design of HMAC completely prevents length extension attacks because the inner hash output is wrapped and re-hashed with the outer padded key: <code>H((K' ⊕ opad) ∥ inner_hash)</code>.
-      </p>
-
-      <h3>4. The Avalanche Effect</h3>
-      <p>
-        Due to the diffusion and confusion properties of SHA-256, HMAC exhibits a strong <strong>Avalanche Effect</strong>: changing even a single bit in the message or secret key causes approximately 50% of the output bits to flip pseudorandomly.
-      </p>
-
-      <h3>5. Can HMAC Be Decrypted?</h3>
-      <p>
-        A common misconception is asking whether an HMAC tag can be decrypted to recover the message. The answer is <strong>NO</strong>. HMAC is a one-way mathematical digest that losslessly compresses arbitrary-length inputs into a fixed 256-bit tag. It is not an encryption cipher. To achieve both confidentiality and integrity, modern cryptographic protocols employ the <strong>Encrypt-then-MAC</strong> paradigm (e.g., AES-256-CBC followed by HMAC-SHA-256).
-      </p>
-    </section>
-
-    <!-- SECTION 3: PROCEDURE -->
-    <section id="procedure" class="lab-section">
-      <span class="lab-section-tag">Procedure</span>
-      <h2 class="lab-section-title">Laboratory Procedure</h2>
-      <p>Follow these steps to conduct the virtual laboratory simulation:</p>
-
-      <ol>
-        <li>
-          <strong>HMAC Generation:</strong>
-          <ul>
-            <li>Enter your plaintext message in the <em>Message</em> field (or click <em>Load RFC 2104 Preset</em>).</li>
-            <li>Enter a shared secret key in the <em>Secret Key</em> field.</li>
-            <li>Click <strong>Generate HMAC Tag</strong> to compute the 64-character hexadecimal HMAC-SHA-256 tag.</li>
-            <li>Observe the intermediate derived key <code>K'</code>, the inner padded key <code>(K' ⊕ ipad)</code>, and the outer padded key <code>(K' ⊕ opad)</code>.</li>
-          </ul>
-        </li>
-        <li>
-          <strong>In-Transit Network Simulation:</strong>
-          <ul>
-            <li>Click <strong>Send Packet to Channel</strong> to transmit the packet containing the message, key, and HMAC tag across the simulated network channel.</li>
-            <li>Click <strong>Tamper Message</strong> to alter a character in the transmission, or click <strong>Tamper Key</strong> to simulate key mismatch.</li>
-            <li>Observe how the channel flags the modification.</li>
-          </ul>
-        </li>
-        <li>
-          <strong>Verification at Receiver:</strong>
-          <ul>
-            <li>Click <strong>Verify HMAC Authenticity</strong> on the receiver card.</li>
-            <li>The receiver recalculates the HMAC using the received message and received key, then compares it against the transmitted tag.</li>
-            <li>Inspect the verification verdict: green for successful match (data authentic), or red for verification failure (tampering detected).</li>
-          </ul>
-        </li>
-        <li>
-          <strong>Avalanche Effect Analysis:</strong>
-          <ul>
-            <li>Switch to the <strong>Avalanche Effect</strong> tab.</li>
-            <li>Click <strong>Flip 1 Bit in Message</strong> and click <strong>Compute Avalanche Analysis</strong>.</li>
-            <li>Review the bit-difference count (Hamming distance) and the percentage of flipped output bits.</li>
-          </ul>
-        </li>
-        <li>
-          <strong>Self-Assessment Quiz:</strong>
-          <ul>
-            <li>Switch to the <strong>Knowledge Quiz</strong> tab.</li>
-            <li>Answer all 10 multiple-choice questions and click <strong>Submit Answers</strong> to test your mastery of HMAC theory and security mechanisms.</li>
-          </ul>
-        </li>
-      </ol>
-    </section>
-
-    <!-- SECTION 4: SIMULATION -->
-    <section id="simulation" class="lab-section">
-      <span class="lab-section-tag">Simulation</span>
-      <h2 class="lab-section-title">Interactive HMAC Laboratory Simulation</h2>
-
-      <!-- Simulator Navigation Tabs -->
-      <div class="lab-tab-bar">
-        <button type="button" class="lab-tab-btn active" id="tabBtnGen">1. HMAC Generator &amp; Network Verification</button>
-        <button type="button" class="lab-tab-btn" id="tabBtnAvalanche">2. Avalanche Effect Analysis</button>
-        <button type="button" class="lab-tab-btn" id="tabBtnQuiz">3. Self-Assessment Quiz</button>
-      </div>
-
-      <!-- PANE 1: GENERATION AND VERIFICATION -->
-      <div id="paneGenerator">
-        <div class="lab-grid-2">
+      <!-- ========================================== -->
+      <!-- TAB 1: THEORY -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="paneTheory" role="tabpanel" aria-labelledby="tabBtnTheory">
+        <div class="lab-card">
+          <h2 class="lab-card-title">Theory</h2>
           
-          <!-- SENDER (ALICE) -->
-          <div class="lab-card-sub">
-            <h4>Sender: Alice (HMAC Generation)</h4>
-            
-            <div class="lab-form-group">
-              <label class="lab-form-label" for="senderMessage">Message (m)</label>
-              <textarea id="senderMessage" rows="3" placeholder="Enter plaintext message...">The quick brown fox jumps over the lazy dog</textarea>
-            </div>
-
-            <div class="lab-form-group">
-              <label class="lab-form-label" for="senderKey">Shared Secret Key (K)</label>
-              <input type="text" id="senderKey" value="secret-key-2026" placeholder="Enter shared secret key...">
-            </div>
-
-            <div class="lab-btn-group">
-              <button type="button" class="lab-btn" id="btnGenerateHmac">Generate HMAC Tag</button>
-              <button type="button" class="btn-secondary" id="btnPresetRfc">Load Preset</button>
-              <button type="button" class="btn-secondary" id="btnClearSender">Clear</button>
-            </div>
-
-            <div class="lab-form-group">
-              <label class="lab-form-label">Computed HMAC-SHA-256 Digest</label>
-              <div class="lab-monitor" id="senderHmacDisplay">Click "Generate HMAC Tag" to calculate...</div>
-            </div>
-
-            <div class="lab-btn-group">
-              <button type="button" class="lab-btn" id="btnSendToChannel">Send Packet to Channel &rarr;</button>
-            </div>
-          </div>
-
-          <!-- NETWORK CHANNEL & RECEIVER (BOB) -->
-          <div class="lab-card-sub">
-            <h4>In-Transit Network &amp; Receiver: Bob</h4>
-            
-            <p><strong>Simulated Network Channel:</strong></p>
-            <div class="lab-callout" style="margin: 10px 0;">
-              <div><strong>Message in Transit:</strong> <span id="channelMsgText">[Not Sent Yet]</span></div>
-              <div><strong>Key in Transit:</strong> <span id="channelKeyText">[Not Sent Yet]</span></div>
-              <div><strong>HMAC Tag:</strong> <span id="channelHmacText" style="word-break: break-all;">[Not Sent Yet]</span></div>
-            </div>
-
-            <div class="lab-btn-group">
-              <button type="button" class="btn-danger" id="btnTamperMsg">Tamper Message</button>
-              <button type="button" class="btn-danger" id="btnTamperKey">Tamper Key</button>
-              <button type="button" class="btn-danger" id="btnTamperTag">Corrupt HMAC Tag</button>
-              <button type="button" class="btn-secondary" id="btnResetPacket">Reset Packet</button>
-            </div>
-
-            <hr style="border: none; border-top: 1px solid #18181b; margin: 18px 0;">
-
-            <h4>Bob's Verification Station</h4>
-            <div class="lab-btn-group">
-              <button type="button" class="lab-btn" id="btnVerifyHmac">Verify HMAC Authenticity</button>
-            </div>
-
-            <div id="receiverVerdictBadge" class="lab-status-badge lab-status-neutral">
-              Status: Awaiting Verification
-            </div>
-
-            <div class="lab-form-group">
-              <label class="lab-form-label">Receiver Recalculated HMAC</label>
-              <div class="lab-monitor" id="receiverRecalculatedHmac">---</div>
-            </div>
-
-            <div class="lab-form-group">
-              <label class="lab-form-label">Transmitted HMAC in Packet</label>
-              <div class="lab-monitor" id="receiverTransmittedHmac">---</div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Intermediate Math Breakdown -->
-        <div class="lab-card-sub" style="margin-top: 20px;">
-          <h4>RFC 2104 Step-by-Step Mathematical State Trace</h4>
-          <div class="lab-callout">
-            <div><strong>Derived Key K' (padded to 64 bytes):</strong></div>
-            <div class="lab-monitor" id="traceDerivedKey">---</div>
-            <div><strong>Inner Padded Key (K' ⊕ ipad):</strong></div>
-            <div class="lab-monitor" id="traceInnerPadKey">---</div>
-            <div><strong>Outer Padded Key (K' ⊕ opad):</strong></div>
-            <div class="lab-monitor" id="traceOuterPadKey">---</div>
-            <div><strong>Inner Hash H((K' ⊕ ipad) ∥ m):</strong></div>
-            <div class="lab-monitor" id="traceInnerHash">---</div>
-            <div><strong>Final HMAC Digest H((K' ⊕ opad) ∥ inner_hash):</strong></div>
-            <div class="lab-monitor" id="traceFinalDigest">---</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PANE 2: AVALANCHE EFFECT -->
-      <div id="paneAvalanche" style="display: none;">
-        <div class="lab-grid-2">
           
-          <div class="lab-card-sub">
-            <h4>Sample A (Baseline)</h4>
-            <div class="lab-form-group">
-              <label class="lab-form-label" for="avMsgA">Message A</label>
-              <input type="text" id="avMsgA" value="The quick brown fox jumps over the lazy dog">
+          <div class="prose">
+            <h3>1. What is HMAC?</h3>
+            <p>
+              <strong>HMAC (Hash-based Message Authentication Code)</strong> is a specific type of message authentication code (MAC) involving a cryptographic hash function and a shared secret cryptographic key. It is formally specified in <strong>RFC 2104</strong> and standardized by NIST in <strong>FIPS PUB 198-1</strong>.
+            </p>
+            <p>
+              HMAC provides two fundamental security guarantees:
+            </p>
+            <ul>
+              <li><strong>Message Authentication (Authenticity):</strong> Proves that the message was created by a party possessing the shared secret key.</li>
+              <li><strong>Data Integrity:</strong> Ensures that the message has not been altered, modified, or corrupted during transit or storage.</li>
+            </ul>
+
+            <div class="formula-box">
+              HMAC(K, m) = H((K' ⊕ opad) ∥ H((K' ⊕ ipad) ∥ m))
             </div>
-            <div class="lab-form-group">
-              <label class="lab-form-label" for="avKeyA">Key A</label>
-              <input type="text" id="avKeyA" value="cryptography-lab-key">
+
+            <div class="info-grid">
+              <div class="info-card">
+                <h4>K' (Derived Key)</h4>
+                <p>If key <em>K</em> is longer than hash block size <em>B</em> (64 bytes for SHA-256), it is pre-hashed <em>H(K)</em>. If shorter, it is right-padded with zeroes to block size <em>B</em>.</p>
+              </div>
+              <div class="info-card">
+                <h4>ipad (Inner Pad)</h4>
+                <p>A byte <code>0x36</code> repeated <em>B</em> times (e.g. 64 times for SHA-256). XORed with the key before the inner hashing pass.</p>
+              </div>
+              <div class="info-card">
+                <h4>opad (Outer Pad)</h4>
+                <p>A byte <code>0x5C</code> repeated <em>B</em> times. XORed with the key before the outer hashing pass.</p>
+              </div>
             </div>
-            <div class="lab-form-group">
-              <label class="lab-form-label">HMAC Digest A (Hex)</label>
-              <div class="lab-monitor" id="avDigestA">---</div>
+
+            <h3>2. Why is a Secret Key Required?</h3>
+            <p>
+              A standard unkeyed hash function (like SHA-256 alone) generates a deterministic checksum. Anyone can compute a hash. If an active attacker (Man-in-the-Middle) modifies a message in transit, they could simply recalculate a new standard SHA-256 hash and replace both.
+            </p>
+            <p>
+              By incorporating a <strong>shared secret key</strong> known only to the sender and recipient, an attacker cannot forge a valid HMAC after modifying the message without knowledge of the secret key.
+            </p>
+
+            <h3>3. Why Not Just Hash <code>H(Key ∥ Message)</code>?</h3>
+            <p>
+              Naively concatenating <code>Hash(Key ∥ Message)</code> is vulnerable to <strong>Length Extension Attacks</strong> when using Merkle-Damgård hash functions (such as MD5, SHA-1, SHA-256, and SHA-512). An attacker can append arbitrary data to the end of the message and predict the new hash without ever knowing the key.
+            </p>
+            <p>
+              The nested two-pass construction of HMAC:
+              <code>H(Key_outer ∥ H(Key_inner ∥ Message))</code>
+              completely neutralizes length extension attacks because the inner hash state is wrapped and hashed again with the outer key.
+            </p>
+
+            <h3>4. The Avalanche Effect</h3>
+            <p>
+              Due to the properties of the underlying cryptographic hash function, HMAC exhibits a strong <strong>Avalanche Effect</strong>: changing even a single bit or single character in either the message or the secret key causes approximately 50% of the output bits to flip pseudorandomly.
+            </p>
+
+            <h3>5. Can HMAC Be Decrypted? (Integrity vs. Confidentiality & Encrypt-then-MAC)</h3>
+            <p>
+              A common misconception in applied cryptography is asking: <em>"Can an HMAC be decrypted to recover the original message?"</em>
+            </p>
+            <p>
+              The short answer is <strong>NO. HMAC is a one-way mathematical digest, not an encryption cipher.</strong>
+            </p>
+            <ul>
+              <li><strong>Lossy Fixed-Size Compression:</strong> The hash function (SHA-256) compresses arbitrary input length down to exactly 256 bits. Millions of distinct messages map to the same hash (Pigeonhole principle), making mathematical inversion impossible.</li>
+              <li><strong>Confidentiality vs. Integrity:</strong> Ciphers (like AES) provide <em>Confidentiality</em> (two-way encryption and decryption). HMAC provides <em>Integrity and Authenticity</em> (one-way tamper detection).</li>
+              <li><strong>The Solution: Authenticated Encryption (Encrypt-then-MAC):</strong> In modern real-world protocols (IPsec, TLS, SSH), systems combine AES and HMAC using the <strong>Encrypt-then-MAC</strong> paradigm:
+                <ol style="margin-top: 6px; padding-left: 20px;">
+                  <li>Sender encrypts Plaintext $m$ with AES-256 into Ciphertext $c$.</li>
+                  <li>Sender computes HMAC tag $t = \text{HMAC}(K, \text{IV} \parallel c)$.</li>
+                  <li>Receiver first verifies the HMAC tag $t$ to confirm integrity.</li>
+                  <li>If and only if HMAC is verified, Receiver decrypts Ciphertext $c$ back to original Plaintext $m$!</li>
+                </ol>
+              </li>
+            </ul>
+
+            <h3>6. Learning Outcomes</h3>
+            <ul>
+              <li>Understand the operational mechanism of Keyed-Hash Message Authentication Codes.</li>
+              <li>Differentiate between confidentiality (encryption/decryption) and integrity/authenticity (HMAC).</li>
+              <li>Simulate the complete Authenticated Encryption pipeline (Encrypt → HMAC Tag → Transit/Tamper → Verify → Decrypt).</li>
+              <li>Demonstrate how modifying a single character in the message breaks HMAC verification.</li>
+              <li>Demonstrate how using an incorrect or altered secret key causes verification failure.</li>
+              <li>Implement and evaluate HMAC generation and verification using the modern W3C <strong>Web Crypto API</strong>.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: PROCEDURE -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="paneProcedure" role="tabpanel" aria-labelledby="tabBtnProcedure">
+        <div class="lab-card">
+          <h2 class="lab-card-title">Laboratory Procedure</h2>
+          <p class="lab-card-subtitle">Follow these step-by-step instructions to perform the experiments.</p>
+
+          <div class="prose">
+            <h3>Workflow A: Full Pipeline Simulation (Encrypt-then-MAC with Decryption)</h3>
+            <ol>
+              <li>Navigate to the <strong>Simulation</strong> tab. Ensure <strong>Full Pipeline: Encrypt-then-MAC (With Decryption)</strong> is selected.</li>
+              <li>In the <strong>1. Sender (Alice)</strong> card:
+                <ul>
+                  <li>Input your message text (e.g. <code>Hello World</code>) and shared secret key (e.g. <code>mysecretkey</code>).</li>
+                  <li>Click <strong><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Encrypt & Generate HMAC</strong>.</li>
+                  <li>Observe the AES-256 ciphertext, 16-byte IV, and 64-character HMAC-SHA-256 authentication tag produced.</li>
+                </ul>
+              </li>
+              <li>Review the <strong>In-Transit Network Channel</strong>:
+                <ul>
+                  <li>Observe the transmitted packet: <code>[ IV ] + [ Ciphertext ] + [ HMAC Tag ]</code>.</li>
+                  <li>Test network attacks using the simulation buttons: <em>Tamper Ciphertext</em>, <em>Tamper HMAC</em>, or <em>Wrong Key</em>.</li>
+                </ul>
+              </li>
+              <li>In the <strong>2. Receiver (Bob)</strong> card:
+                <ul>
+                  <li>Click <strong><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Verify HMAC & Decrypt</strong>.</li>
+                  <li>Observe the two-phase validation:
+                    <ul>
+                      <li><strong>Step 1 (HMAC Gate):</strong> Verifies the authentication tag over received ciphertext.</li>
+                      <li><strong>Step 2 (Decryption Engine):</strong> If HMAC is valid, decrypts ciphertext and displays the exact original plaintext: <code>Hello World</code>!</li>
+                    </ul>
+                  </li>
+                  <li>If tampered, notice that decryption is safely aborted to prevent padding oracle exploits. Click <em><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Force Decrypt (Unsafe)</em> to observe cryptographic padding corruption.</li>
+                </ul>
+              </li>
+            </ol>
+
+            <h3>Workflow B: Standard HMAC Digest & Verification (RFC 2104)</h3>
+            <ol>
+              <li>Switch the architecture mode to <strong>Standard HMAC: Digest Only (RFC 2104)</strong>.</li>
+              <li>Input plaintext message and secret key. Click <strong>Generate HMAC</strong>.</li>
+              <li>Click <strong>Send to Verifier</strong>, then <strong>Verify HMAC</strong> to confirm integrity check.</li>
+              <li>Click <strong>Attempt HMAC "Decryption"</strong> to inspect why raw HMAC cannot be inverted into plaintext.</li>
+              <li>Explore the <strong>Modification Analysis</strong> card below to evaluate the Avalanche Effect.</li>
+            </ol>
+
+            <h3>Preset Test Cases Matrix</h3>
+            <div class="info-grid">
+              <div class="info-card">
+                <h4>Test Case 1: Clean Transmission</h4>
+                <p><strong>Action:</strong> Encrypt <code>Hello World</code>, verify HMAC, and decrypt.<br><strong>Expected:</strong> HMAC Valid, Decryption SUCCESS (recovers original plaintext).</p>
+              </div>
+              <div class="info-card">
+                <h4>Test Case 2: Tampered Ciphertext</h4>
+                <p><strong>Action:</strong> Attacker flips a byte in ciphertext in transit.<br><strong>Expected:</strong> HMAC Verification FAILS, Decryption ABORTED for security.</p>
+              </div>
+              <div class="info-card">
+                <h4>Test Case 3: Tampered Secret Key</h4>
+                <p><strong>Action:</strong> Receiver uses incorrect key (e.g. <code>mysecretKey</code>).<br><strong>Expected:</strong> HMAC Verification FAILS, Decryption blocked.</p>
+              </div>
+              <div class="info-card">
+                <h4>Test Case 4: Corrupted HMAC Tag</h4>
+                <p><strong>Action:</strong> Forged or corrupted HMAC tag supplied.<br><strong>Expected:</strong> Recalculated HMAC does not match, rejected.</p>
+              </div>
+              <div class="info-card">
+                <h4>Test Case 5: Empty Input Validation</h4>
+                <p><strong>Message/Key:</strong> Empty string.<br><strong>Expected:</strong> Validation banner prompts for input; operation halts gracefully.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: SIMULATION (Main interactive lab) -->
+      <!-- ========================================== -->
+      <section class="tab-pane active" id="paneSimulation" role="tabpanel" aria-labelledby="tabBtnSimulation">
+        
+        <!-- Workflow Stepper Indicator -->
+        <div class="flow-stepper">
+          <div class="flow-step active" id="step1">
+            <span class="flow-badge">1</span>
+            <span class="flow-label">Inputs</span>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" id="step2">
+            <span class="flow-badge">2</span>
+            <span class="flow-label">Generate</span>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" id="step3">
+            <span class="flow-badge">3</span>
+            <span class="flow-label">Output</span>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" id="step4">
+            <span class="flow-badge">4</span>
+            <span class="flow-label">Tamper / Test</span>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" id="step5">
+            <span class="flow-badge">5</span>
+            <span class="flow-label">Verify</span>
+            <button type="button" class="btn btn-primary" id="btnFlowStep5Verify" style="margin-top: 6px; padding: 6px 12px; font-size: 11px; font-weight: 600;" title="Verify HMAC & Decrypt">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              Verify & Decrypt
+            </button>
+          </div>
+        </div>
+
+        <!-- Validation Notice Alert -->
+        <div class="validation-alert" id="validationNotice">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Please provide both a message and a secret key to proceed.
+        </div>
+
+        <!-- Preset Test Cases Quick Bar -->
+        <div class="preset-strip">
+          <span class="preset-label">Quick Test Cases:</span>
+          <button type="button" class="chip-btn" id="loadPreset1">Case 1: Standard (Hello World)</button>
+          <button type="button" class="chip-btn" id="loadPreset2">Case 2: Tampered Message</button>
+          <button type="button" class="chip-btn" id="loadPreset3">Case 3: Tampered Key</button>
+          <button type="button" class="chip-btn" id="loadPreset4">Case 4: Bad HMAC</button>
+          <button type="button" class="chip-btn" id="loadPresetReset" style="background:#2a1b16; border-color:#5c392c;">Reset All</button>
+        </div>
+
+        <!-- Card 1: Simulation Controls -->
+        <div class="lab-card">
+          <h2 class="lab-card-title">Simulation controls</h2>
+          <p class="lab-card-subtitle">Add inputs and controls for the experiment simulation.</p>
+
+          <!-- Simulation Architecture Mode Switcher -->
+          <div class="mode-switcher-container">
+            <div class="mode-switcher-header">
+              <span class="mode-switcher-label">Simulation Architecture:</span>
+              <span class="mode-switcher-hint">Switch between Full Authenticated Transmission (with Decryption) and Standard RFC 2104 HMAC</span>
+            </div>
+            <div class="mode-tabs">
+              <button type="button" class="mode-tab-btn active" id="btnModeEncryptMac">
+                <span class="mode-tab-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+                <span>Full Pipeline: Encrypt-then-MAC (With Decryption)</span>
+                <span class="badge-tag badge-blue" style="font-size:10px; margin-left:6px;">Full Simulation</span>
+              </button>
+              <button type="button" class="mode-tab-btn" id="btnModeHmacOnly">
+                <span class="mode-tab-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg></span>
+                <span>Standard HMAC: Digest Only (RFC 2104)</span>
+                <span class="badge-tag badge-amber" style="font-size:10px; margin-left:6px;">Integrity Only</span>
+              </button>
             </div>
           </div>
 
-          <div class="lab-card-sub">
-            <h4>Sample B (Modified)</h4>
-            <div class="lab-form-group">
-              <label class="lab-form-label" for="avMsgB">Message B</label>
-              <input type="text" id="avMsgB" value="The quick brown fox jumps over the lazy cog">
+          <!-- PANEL 1: FULL PIPELINE (ENCRYPT-THEN-MAC WITH DECRYPTION) -->
+          <div id="panelEncryptMac">
+            <div class="sim-split">
+              <!-- Sub-Card 1: Sender (Encrypt & HMAC Generation) -->
+              <div class="sub-card">
+                <div class="sub-card-title">
+                  <span>1. Sender (Alice): Encryption & HMAC</span>
+                  <span class="badge-tag badge-blue">Generation & Encrypt</span>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="pipeMessage">
+                      <span>Message</span>
+                      <span class="hint">Plaintext data</span>
+                    </label>
+                    <textarea id="pipeMessage" class="textarea-control" placeholder="Enter message to encrypt and authenticate (e.g. Hello World)">Hello World</textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="pipeKey">
+                      <span>Shared Secret Key</span>
+                      <span class="hint">AES + HMAC symmetric key</span>
+                    </label>
+                    <div class="key-input-wrapper">
+                      <input type="password" id="pipeKey" class="input-control mono-input" value="mysecretkey" placeholder="Enter shared secret key">
+                      <button type="button" class="toggle-visibility-btn" id="btnTogglePipeKey" title="Toggle key visibility">Show</button>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label" for="pipeCipher">
+                        <span>Cipher</span>
+                        <span class="hint">Confidentiality</span>
+                      </label>
+                      <select id="pipeCipher" class="select-control">
+                        <option value="AES-CBC" selected>AES-256-CBC</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="pipeHash">
+                        <span>HMAC Hash</span>
+                        <span class="hint">Integrity/Auth</span>
+                      </label>
+                      <select id="pipeHash" class="select-control">
+                        <option value="SHA-256" selected>HMAC-SHA-256 (Default)</option>
+                        <option value="SHA-384">HMAC-SHA-384</option>
+                        <option value="SHA-512">HMAC-SHA-512</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-primary" id="btnPipeEncrypt">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                      </svg>
+                      Encrypt & Generate HMAC
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnPipeTransmit" title="Transmit encrypted package into channel">
+                      Transmit to Channel ↓
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sub-Card 2: Receiver (HMAC Verification & Decryption) -->
+              <div class="sub-card">
+                <div class="sub-card-title">
+                  <span>2. Receiver (Bob): Verify & Decrypt</span>
+                  <span class="badge-tag badge-amber">Integrity & Decrypt</span>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="pipeRxPlaintext">
+                      <span>Expected Plain Text</span>
+                      <span class="hint">Original message (auto-filled from sender)</span>
+                    </label>
+                    <textarea id="pipeRxPlaintext" class="textarea-control" style="font-size:13px; min-height:50px; background:#14100e;" placeholder="Expected plaintext will appear here after sender encrypts..." readonly></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="pipeRxCiphertext">
+                      <span>Received Ciphertext (Base64)</span>
+                      <span class="hint">Encrypted data</span>
+                    </label>
+                    <textarea id="pipeRxCiphertext" class="textarea-control mono-input" style="font-size:12px; min-height:60px;" placeholder="Ciphertext received from channel"></textarea>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label" for="pipeRxIv">
+                        <span>Received IV (Hex)</span>
+                        <span class="hint">16-byte vector</span>
+                      </label>
+                      <input type="text" id="pipeRxIv" class="input-control mono-input" placeholder="Hex initialization vector">
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="pipeRxKey">
+                        <span>Secret Key</span>
+                        <span class="hint">Receiver's key</span>
+                      </label>
+                      <div class="key-input-wrapper">
+                        <input type="password" id="pipeRxKey" class="input-control mono-input" value="mysecretkey" placeholder="Enter key">
+                        <button type="button" class="toggle-visibility-btn" id="btnTogglePipeRxKey" title="Toggle key visibility">Show</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Hidden HMAC field for internal verification logic -->
+                  <input type="hidden" id="pipeRxHmac" value="">
+
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-primary" id="btnPipeVerifyDecrypt">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                      </svg>
+                      Verify HMAC & Decrypt
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnPipeForceDecrypt" style="border-color:#7f1d1d; color:#fca5a5;" title="Attempt decryption without HMAC check to demonstrate failure/padding error">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                      </svg>
+                      Force Decrypt (Unsafe)
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnPipeCopySender" title="Copy exact payload from Sender">
+                      Copy from Sender
+                    </button>
+                  </div>
+                </div>
+              </div>
+
             </div>
-            <div class="lab-form-group">
-              <label class="lab-form-label" for="avKeyB">Key B</label>
-              <input type="text" id="avKeyB" value="cryptography-lab-key">
+
+            <!-- In-Transit Network Channel & Attacker Simulator -->
+            <div class="channel-card">
+              <div class="channel-header">
+                <div class="channel-title">
+                  <span class="channel-pulse"></span>
+                  <span>In-Transit Network Channel (Attacker / MITM Interceptor)</span>
+                </div>
+                <div id="channelStatusBadge" class="badge-tag badge-green">Status: Clean (No Tampering)</div>
+              </div>
+              <p class="channel-desc">Data packet traveling across the untrusted network. An adversary can intercept and tamper with the ciphertext or HMAC tag before the receiver gets it.</p>
+              
+              <div class="packet-display">
+                <div class="packet-chunk">
+                  <span class="chunk-label">IV (16 Bytes)</span>
+                  <span class="chunk-val mono-input" id="packetIvDisplay">-</span>
+                </div>
+                <span class="packet-delim">+</span>
+                <div class="packet-chunk">
+                  <span class="chunk-label">Ciphertext (AES-256)</span>
+                  <span class="chunk-val mono-input" id="packetCtDisplay">-</span>
+                </div>
+                <span class="packet-delim">+</span>
+                <div class="packet-chunk">
+                  <span class="chunk-label">HMAC Tag (SHA-256)</span>
+                  <span class="chunk-val mono-input" id="packetHmacDisplay">-</span>
+                </div>
+              </div>
+
+              <div class="channel-actions">
+                <span class="channel-actions-label">Simulate In-Transit Attacks / Tampering:</span>
+                <div class="btn-group">
+                  <button type="button" class="chip-btn chip-active" id="btnChannelClean"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Clean Transmission</button>
+                  <button type="button" class="chip-btn" id="btnChannelTamperCt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Tamper Ciphertext (Flip Byte)</button>
+                  <button type="button" class="chip-btn" id="btnChannelTamperHmac"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Tamper HMAC (Corrupt Tag)</button>
+                  <button type="button" class="chip-btn" id="btnChannelTamperKey"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Use Wrong Receiver Key</button>
+                </div>
+              </div>
             </div>
-            <div class="lab-form-group">
-              <label class="lab-form-label">HMAC Digest B (Hex)</label>
-              <div class="lab-monitor" id="avDigestB">---</div>
+          </div>
+
+          <!-- PANEL 2: STANDARD HMAC ONLY (RFC 2104) -->
+          <div id="panelHmacOnly" style="display: none;">
+            <div class="sim-split">
+              <!-- Sub-Card 1: HMAC Generator -->
+              <div class="sub-card">
+                <div class="sub-card-title">
+                  <span>1. HMAC Generator</span>
+                  <span class="badge-tag badge-blue">Generation</span>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="genMessage">
+                      <span>Message</span>
+                      <span class="hint">Plaintext data</span>
+                    </label>
+                    <textarea id="genMessage" class="textarea-control" placeholder="Enter message to authenticate (e.g. Hello World)">Hello World</textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="genKey">
+                      <span>Secret Key</span>
+                      <span class="hint">Shared private key</span>
+                    </label>
+                    <div class="key-input-wrapper">
+                      <input type="password" id="genKey" class="input-control mono-input" value="mysecretkey" placeholder="Enter secret key">
+                      <button type="button" class="toggle-visibility-btn" id="btnToggleGenKey" title="Toggle key visibility">Show</button>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="genAlgorithm">
+                      <span>Hash Algorithm</span>
+                      <span class="hint">Web Crypto API</span>
+                    </label>
+                    <select id="genAlgorithm" class="select-control">
+                      <option value="SHA-256" selected>HMAC-SHA-256 (Default)</option>
+                      <option value="SHA-384">HMAC-SHA-384</option>
+                      <option value="SHA-512">HMAC-SHA-512</option>
+                    </select>
+                  </div>
+
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-primary" id="btnGenerate">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                      </svg>
+                      Generate HMAC
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnSendToVerify" title="Transfer inputs and generated HMAC to verification">
+                      Send to Verifier ↓
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sub-Card 2: HMAC Verification -->
+              <div class="sub-card">
+                <div class="sub-card-title">
+                  <span>2. HMAC Verification</span>
+                  <span class="badge-tag badge-amber">Integrity Check</span>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="verMessage">
+                      <span>Message to Verify</span>
+                      <span class="hint">Received plaintext</span>
+                    </label>
+                    <textarea id="verMessage" class="textarea-control" placeholder="Enter message to verify">Hello World</textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="verKey">
+                      <span>Secret Key</span>
+                      <span class="hint">Verifier's secret key</span>
+                    </label>
+                    <div class="key-input-wrapper">
+                      <input type="password" id="verKey" class="input-control mono-input" value="mysecretkey" placeholder="Enter verification key">
+                      <button type="button" class="toggle-visibility-btn" id="btnToggleVerKey" title="Toggle key visibility">Show</button>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="verHmac">
+                      <span>Supplied HMAC (Hex)</span>
+                      <span class="hint">Authentication code to test</span>
+                    </label>
+                    <input type="text" id="verHmac" class="input-control mono-input" placeholder="Paste hexadecimal HMAC here">
+                  </div>
+
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-primary" id="btnVerify">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                      </svg>
+                      Verify HMAC
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnFillFromGen">
+                      Copy from Generator
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Educational Notice: Can HMAC be decrypted? -->
+            <div class="hmac-decrypt-explainer">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                <div>
+                  <strong style="color:#fcd34d; font-size:14px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Can an HMAC Digest Be Decrypted Back to the Message?</strong>
+                  <p style="font-size:12.5px; color:#c7b6a9; margin-top:3px;">Learn the mathematical difference between One-Way Authentication (HMAC) and Two-Way Confidentiality (Encryption/Decryption).</p>
+                </div>
+                <button type="button" class="btn btn-secondary" id="btnAttemptHmacDecrypt" style="font-size:12.5px; padding:8px 16px;">
+                  Attempt HMAC "Decryption" <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
+              </div>
+              <div id="hmacDecryptResult" style="display:none; margin-top:14px; padding:16px; background:#18110d; border-radius:8px; border:1px solid #4a382d;">
+                <div style="color:#ff7b72; font-weight:700; font-size:14px; margin-bottom:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> HMAC is Mathematically Non-Reversible (Cannot be Decrypted)</div>
+                <p style="font-size:13px; color:#ded0c5; line-height:1.6; margin-bottom:10px;">
+                  <strong>Why HMAC cannot be decrypted:</strong>
+                </p>
+                <ol style="font-size:12.5px; color:#c7b6a9; padding-left:20px; line-height:1.6; margin-bottom:12px;">
+                  <li><strong>Lossy Fixed-Size Compression:</strong> The hash function (SHA-256) compresses arbitrary input length down to exactly 256 bits. An infinite number of possible inputs map to the same hash (Pigeonhole principle), making one-to-one reversal impossible.</li>
+                  <li><strong>One-Way Preimage Resistance:</strong> SHA-256 consists of non-invertible non-linear operations (modular addition, bit rotations, and XORs) across 64 compression rounds.</li>
+                  <li><strong>Confidentiality vs. Integrity:</strong> HMAC provides <em>Integrity and Authenticity</em>. To achieve <em>Confidentiality (Encryption & Decryption)</em>, modern systems combine HMAC with a symmetric cipher like AES-256 (Encrypt-then-MAC).</li>
+                </ol>
+                <button type="button" class="btn btn-primary" id="btnSwitchToPipelineFromExp" style="font-size:12px; padding:8px 14px;">
+                  Switch to Full Encrypt-then-MAC Simulation (With Decryption) →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Simulation Output -->
+        <div class="lab-card">
+          <h2 class="lab-card-title">Simulation Output</h2>
+          <p class="lab-card-subtitle">Follow the step-by-step cryptographic process below. Each step reveals after the previous completes.</p>
+
+          <!-- OUTPUT FOR FULL PIPELINE - 5 Step Educational Flow -->
+          <div id="outPanelEncryptMac">
+            <div class="simulation-steps">
+              
+              <!-- Step 1: Inputs -->
+              <div class="sim-step active" data-step="1" id="simStep1">
+                <div class="sim-step-header">
+                  <span class="sim-step-badge">1</span>
+                  <h3 class="sim-step-title">Inputs (Alice's Side)</h3>
+                  <span class="sim-step-status completed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Ready</span>
+                </div>
+                <div class="sim-step-content">
+                  <div class="sim-explanation">
+                    <h4>What happens here:</h4>
+                    <p>Alice prepares her <strong>plaintext message</strong> and <strong>shared secret key</strong>. These are the only two inputs needed for the entire Encrypt-then-MAC pipeline.</p>
+                  </div>
+                  <div class="sim-io-grid">
+                    <div class="sim-io-card">
+                      <label class="sim-io-label">Plaintext Message</label>
+                      <div class="sim-io-value mono-input" id="simStep1Msg">-</div>
+                    </div>
+                    <div class="sim-io-card">
+                      <label class="sim-io-label">Secret Key</label>
+                      <div class="sim-io-value mono-input" id="simStep1Key">-</div>
+                    </div>
+                    <div class="sim-io-card">
+                      <label class="sim-io-label">Cipher Algorithm</label>
+                      <div class="sim-io-value" id="simStep1Cipher">AES-256-CBC</div>
+                    </div>
+                    <div class="sim-io-card">
+                      <label class="sim-io-label">HMAC Hash</label>
+                      <div class="sim-io-value" id="simStep1Hash">SHA-256</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 2: AES Encryption -->
+              <div class="sim-step" data-step="2" id="simStep2">
+                <div class="sim-step-header">
+                  <span class="sim-step-badge">2</span>
+                  <h3 class="sim-step-title">AES-256-CBC Encryption</h3>
+                  <span class="sim-step-status pending">⏳ Waiting</span>
+                </div>
+                <div class="sim-step-content">
+                  <div class="sim-explanation">
+                    <h4>What happens here:</h4>
+                    <p>Alice encrypts the plaintext using <strong>AES-256-CBC</strong>. A random <strong>16-byte IV (Initialization Vector)</strong> is generated for semantic security. The same plaintext encrypted twice produces different ciphertexts.</p>
+                    <div class="sim-formula">Ciphertext = AES-256-CBC<sub>Key</sub>(Plaintext, IV)</div>
+                  </div>
+                  <div class="sim-io-grid">
+                    <div class="sim-io-card">
+                      <label class="sim-io-label">IV (Hex)</label>
+                      <div class="sim-io-value mono-input" id="simStep2Iv">-</div>
+                    </div>
+                    <div class="sim-io-card">
+                      <label class="sim-io-label">Ciphertext (Base64)</label>
+                      <div class="sim-io-value mono-input" id="simStep2Ct" style="word-break: break-all; font-size: 11px;">-</div>
+                    </div>
+                    <div class="sim-io-card">
+                      <label class="sim-io-label">Ciphertext Length</label>
+                      <div class="sim-io-value" id="simStep2CtLen">0 bytes</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 3: HMAC Generation -->
+              <div class="sim-step" data-step="3" id="simStep3">
+                <div class="sim-step-header">
+                  <span class="sim-step-badge">3</span>
+                  <h3 class="sim-step-title">HMAC-SHA-256 Generation (Encrypt-then-MAC)</h3>
+                  <span class="sim-step-status pending">⏳ Waiting</span>
+                </div>
+                <div class="sim-step-content">
+                  <div class="sim-explanation">
+                    <h4>What happens here:</h4>
+                    <p>Alice computes an authentication tag over <strong>IV + Ciphertext</strong> using the shared secret key. This is the <strong>Encrypt-then-MAC</strong> construction: the HMAC protects the ciphertext (not the plaintext), ensuring integrity before decryption.</p>
+                    <div class="sim-formula">HMAC Tag = HMAC-SHA-256<sub>Key</sub>(IV || Ciphertext)</div>
+                  </div>
+                  <div class="sim-io-grid">
+                    <div class="sim-io-card full-width">
+                      <label class="sim-io-label">HMAC Authentication Tag (Hex)</label>
+                      <div class="sim-io-value mono-input" id="simStep3Hmac" style="color: #7ee787;">-</div>
+                    </div>
+                    <div class="sim-io-card">
+                      <label class="sim-io-label">Tag Length</label>
+                      <div class="sim-io-value">64 hex chars (256 bits)</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 4: Network Transit -->
+              <div class="sim-step" data-step="4" id="simStep4">
+                <div class="sim-step-header">
+                  <span class="sim-step-badge">4</span>
+                  <h3 class="sim-step-title">In-Transit Network Channel</h3>
+                  <span class="sim-step-status pending">⏳ Waiting</span>
+                </div>
+                <div class="sim-step-content">
+                  <div class="sim-explanation">
+                    <h4>What happens here:</h4>
+                    <p>The complete packet <strong>[IV] + [Ciphertext] + [HMAC Tag]</strong> travels across the untrusted network. An attacker (Mallory) can intercept and tamper with any part. The channel simulator lets you test tampering scenarios.</p>
+                  </div>
+                  <div class="sim-packet">
+                    <div class="sim-packet-chunk">
+                      <span class="sim-packet-label">IV (16 bytes)</span>
+                      <span class="sim-packet-value mono-input" id="simStep4Iv">-</span>
+                    </div>
+                    <span class="sim-packet-delim">+</span>
+                    <div class="sim-packet-chunk">
+                      <span class="sim-packet-label">Ciphertext</span>
+                      <span class="sim-packet-value mono-input" id="simStep4Ct" style="word-break: break-all; font-size: 11px;">-</span>
+                    </div>
+                    <span class="sim-packet-delim">+</span>
+                    <div class="sim-packet-chunk">
+                      <span class="sim-packet-label">HMAC Tag</span>
+                      <span class="sim-packet-value mono-input" id="simStep4Hmac" style="color: #7ee787;">-</span>
+                    </div>
+                  </div>
+                  <div class="sim-tamper-info" id="simStep4TamperInfo" style="display: none;">
+                    <strong><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Tampering Active:</strong> <span id="simStep4TamperType">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 5: Verify & Decrypt -->
+              <div class="sim-step" data-step="5" id="simStep5">
+                <div class="sim-step-header">
+                  <span class="sim-step-badge">5</span>
+                  <h3 class="sim-step-title">Verify HMAC & Decrypt (Bob's Side)</h3>
+                  <span class="sim-step-status pending">⏳ Waiting</span>
+                </div>
+                <div class="sim-step-content">
+                  <div class="sim-explanation">
+                    <h4>What happens here:</h4>
+                    <p>Bob performs <strong>two-phase verification</strong>:</p>
+                    <ol style="margin: 8px 0 8px 20px; line-height: 1.8;">
+                      <li><strong>Phase 1 - HMAC Gate:</strong> Recalculates HMAC over received IV + Ciphertext using the shared key. If tags don't match → <strong>ABORT</strong> (prevents padding oracle attacks).</li>
+                      <li><strong>Phase 2 - Decryption:</strong> Only if HMAC is valid, decrypts ciphertext with AES-256-CBC to recover the original plaintext.</li>
+                    </ol>
+                    <div class="sim-formula">Plaintext = AES-256-CBC<sub>Key</sub><sup>-1</sup>(Ciphertext, IV)  <em>only if HMAC valid</em></div>
+                  </div>
+                  
+                  <!-- Phase 1: HMAC Verification -->
+                  <div class="sim-phase" id="simPhase1">
+                    <h4>Phase 1: HMAC Verification</h4>
+                    <div class="sim-io-grid">
+                      <div class="sim-io-card full-width">
+                        <label class="sim-io-label">Recalculated HMAC</label>
+                        <div class="sim-io-value mono-input" id="simPhase1Recalc">-</div>
+                      </div>
+                      <div class="sim-io-card full-width">
+                        <label class="sim-io-label">Received HMAC</label>
+                        <div class="sim-io-value mono-input" id="simPhase1Received">-</div>
+                      </div>
+                    </div>
+                    <div class="sim-verdict" id="simPhase1Verdict"></div>
+                  </div>
+
+                  <!-- Phase 2: Decryption Result -->
+                  <div class="sim-phase" id="simPhase2" style="display: none;">
+                    <h4>Phase 2: Decryption</h4>
+                    <div class="sim-io-grid">
+                      <div class="sim-io-card full-width">
+                        <label class="sim-io-label">Decrypted Plaintext</label>
+                        <div class="sim-io-value mono-input" id="simPhase2Plaintext" style="color: #7ee787; font-weight: 600; background: #0f1c13; border: 1px solid #1e452a;">-</div>
+                      </div>
+                      <div class="sim-io-card">
+                        <label class="sim-io-label">Match Expected?</label>
+                        <div class="sim-io-value" id="simPhase2Match">-</div>
+                      </div>
+                    </div>
+                    <div class="sim-verdict success" id="simPhase2Verdict"></div>
+                  </div>
+
+                  <!-- Failure Case -->
+                  <div class="sim-verdict failure" id="simFailureVerdict" style="display: none;"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- OUTPUT FOR STANDARD HMAC (Original Output) -->
+          <div id="outPanelHmacOnly" style="display: none;">
+            <div class="sim-split">
+              <!-- Output Sub-Card 1: Generated HMAC -->
+              <div class="sub-card">
+                <div class="sub-card-title">
+                  <span>Generated HMAC</span>
+                  <span id="outputAlgoTag" class="badge-tag badge-blue">HMAC-SHA-256</span>
+                </div>
+                
+                <div class="output-box">
+                  <div class="output-header">
+                    <span class="output-label" id="hexLenLabel">Hexadecimal Digest (64 chars / 256 bits)</span>
+                    <button type="button" class="copy-btn" id="btnCopyGenerated" title="Copy HMAC to clipboard">Copy Hex</button>
+                  </div>
+                  <div class="hex-display" id="generatedHmacDisplay">
+                    <span class="hex-placeholder">Click "Generate HMAC" above to produce the authentication code...</span>
+                  </div>
+                </div>
+
+                <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between;">
+                  <span>Length: <strong id="outCharCount" style="color: #e5d7cc;">0</strong> characters</span>
+                  <span>Binary length: <strong id="outBitLength" style="color: #e5d7cc;">0</strong> bits</span>
+                </div>
+              </div>
+
+              <!-- Output Sub-Card 2: Verification Result -->
+              <div class="sub-card">
+                <div class="sub-card-title">
+                  <span>Verification Result</span>
+                  <span id="verifyStatusBadge" class="badge-tag" style="background:#33261f; color:#a89587;">Pending</span>
+                </div>
+
+                <!-- Banner when not yet verified -->
+                <div id="verifyPendingMsg" class="output-box" style="text-align: center; padding: 24px 16px;">
+                  <p style="color: #7b695d; font-size: 13.5px; font-style: italic;">
+                    Enter details in the verification control and click <strong>Verify HMAC</strong> to execute cryptographic recalculation.
+                  </p>
+                </div>
+
+                <!-- Verification Success Banner -->
+                <div class="verify-banner success" id="verifySuccessBanner">
+                  <div class="verify-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="16 8 12 12 8 16"></polyline></svg></div>
+                  <div class="verify-content">
+                    <h4>HMAC Verified</h4>
+                    <p>Message integrity and authentication are valid.</p>
+                    <div class="verify-details" id="verifySuccessDetails"></div>
+                  </div>
+                </div>
+
+                <!-- Verification Failure Banner -->
+                <div class="verify-banner failure" id="verifyFailureBanner">
+                  <div class="verify-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></div>
+                  <div class="verify-content">
+                    <h4>HMAC Verification Failed</h4>
+                    <p>The message or secret key may have been modified.</p>
+                    <div class="verify-details" id="verifyFailureDetails"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Modification Analysis (Interactive Avalanche & Integrity Demonstration) -->
+        <div class="lab-card">
+          <h2 class="lab-card-title">Modification Analysis</h2>
+          <p class="lab-card-subtitle">Analyze what happens when the message or secret key is altered by even a single character.</p>
+
+          <div class="analysis-tabs">
+            <button type="button" class="analysis-tab-btn active" id="btnTabModMsg">A. Modify Message</button>
+            <button type="button" class="analysis-tab-btn" id="btnTabModKey">B. Modify Secret Key</button>
+          </div>
+
+          <!-- Section A: Modify Message -->
+          <div id="sectionModMsg">
+            <div class="compare-grid">
+              
+              <div class="compare-card">
+                <div class="compare-card-title">
+                  <span>Original Message & HMAC</span>
+                  <span class="badge-tag badge-blue">Baseline</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="modOrigMsg">Original Message</label>
+                  <input type="text" id="modOrigMsg" class="input-control" value="Hello World">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                  <label class="form-label">Shared Secret Key</label>
+                  <input type="text" id="modMsgSharedKey" class="input-control mono-input" value="mysecretkey">
+                </div>
+                <div class="output-header" style="margin-top: 14px;">
+                  <span class="output-label">Original HMAC:</span>
+                </div>
+                <div class="hex-display" id="modOrigMsgHmac" style="font-size: 12px;"></div>
+              </div>
+
+              <div class="compare-card">
+                <div class="compare-card-title">
+                  <span>Modified Message & HMAC</span>
+                  <span class="badge-tag badge-amber">Tampered</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="modTamperedMsg">
+                    <span>Modified Message</span>
+                    <span class="hint" style="color: #ff9800;">Notice casing / punctuation change</span>
+                  </label>
+                  <input type="text" id="modTamperedMsg" class="input-control" value="Hello world">
+                </div>
+                <div class="btn-group" style="margin-top: 10px;">
+                  <button type="button" class="chip-btn" id="quickModMsgCase">Make lowercase ('world')</button>
+                  <button type="button" class="chip-btn" id="quickModMsgExcl">Add exclamation ('!')</button>
+                  <button type="button" class="chip-btn" id="quickModMsgSpace">Add trailing space</button>
+                </div>
+                <div class="output-header" style="margin-top: 14px;">
+                  <span class="output-label">New HMAC:</span>
+                </div>
+                <div class="hex-display" id="modTamperedMsgHmac" style="font-size: 12px;"></div>
+              </div>
+
+            </div>
+
+            <!-- Avalanche Statistics -->
+            <div class="stats-bar">
+              <div class="stat-item">
+                <span class="stat-num" id="statMsgHexDiff">0 / 64</span>
+                <span class="stat-label">Hex characters changed</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num" id="statMsgBitDiff">0 / 256</span>
+                <span class="stat-label">Bits flipped (Hamming distance)</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num" id="statMsgAvalanchePct">0%</span>
+                <span class="stat-label">Avalanche Effect (~50% is ideal)</span>
+              </div>
+              <div class="stat-item" style="margin-left: auto; align-self: center;">
+                <span id="statMsgVerdict" class="badge-tag" style="background: rgba(248,81,73,0.2); color: #ff7b72; font-size: 13px; padding: 6px 12px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> HMAC Mismatch
+                </span>
+              </div>
+            </div>
+
+            <!-- Visual Character Comparison Diff -->
+            <div class="compare-card">
+              <div class="compare-card-title">
+                <span>Character-by-Character Digest Diff</span>
+                <span class="hint" style="font-size: 11px; color:#ff7b72;">Highlighted red = mismatched character</span>
+              </div>
+              <div class="diff-container" id="diffDisplayMsg"></div>
+            </div>
+
+            <div class="explanation-callout">
+              <strong>Observation & Scientific Concept:</strong> A small change in the message (even changing uppercase 'W' to lowercase 'w' or adding a single space) causes a completely different HMAC because the HMAC is dependent on the complete message through the inner and outer hash states.
+            </div>
+          </div>
+
+          <!-- Section B: Modify Secret Key -->
+          <div id="sectionModKey" style="display: none;">
+            <div class="compare-grid">
+              
+              <div class="compare-card">
+                <div class="compare-card-title">
+                  <span>Original Secret Key & HMAC</span>
+                  <span class="badge-tag badge-blue">Baseline</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Message</label>
+                  <input type="text" id="modKeySharedMsg" class="input-control" value="Hello World">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                  <label class="form-label" for="modOrigKey">Original Key</label>
+                  <input type="text" id="modOrigKey" class="input-control mono-input" value="mysecretkey">
+                </div>
+                <div class="output-header" style="margin-top: 14px;">
+                  <span class="output-label">Original HMAC:</span>
+                </div>
+                <div class="hex-display" id="modOrigKeyHmac" style="font-size: 12px;"></div>
+              </div>
+
+              <div class="compare-card">
+                <div class="compare-card-title">
+                  <span>Modified Secret Key & HMAC</span>
+                  <span class="badge-tag badge-amber">Tampered</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="modTamperedKey">
+                    <span>Modified Key</span>
+                    <span class="hint" style="color: #ff9800;">Notice casing variation</span>
+                  </label>
+                  <input type="text" id="modTamperedKey" class="input-control mono-input" value="mysecretKey">
+                </div>
+                <div class="btn-group" style="margin-top: 10px;">
+                  <button type="button" class="chip-btn" id="quickModKeyUpper">Capitalize 'Key'</button>
+                  <button type="button" class="chip-btn" id="quickModKeyAppend">Add '123'</button>
+                  <button type="button" class="chip-btn" id="quickModKeyWrong">Use 'wrongkey'</button>
+                </div>
+                <div class="output-header" style="margin-top: 14px;">
+                  <span class="output-label">New HMAC:</span>
+                </div>
+                <div class="hex-display" id="modTamperedKeyHmac" style="font-size: 12px;"></div>
+              </div>
+
+            </div>
+
+            <!-- Avalanche Statistics for Key -->
+            <div class="stats-bar">
+              <div class="stat-item">
+                <span class="stat-num" id="statKeyHexDiff">0 / 64</span>
+                <span class="stat-label">Hex characters changed</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num" id="statKeyBitDiff">0 / 256</span>
+                <span class="stat-label">Bits flipped (Hamming distance)</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num" id="statKeyAvalanchePct">0%</span>
+                <span class="stat-label">Avalanche Effect (~50% is ideal)</span>
+              </div>
+              <div class="stat-item" style="margin-left: auto; align-self: center;">
+                <span id="statKeyVerdict" class="badge-tag" style="background: rgba(248,81,73,0.2); color: #ff7b72; font-size: 13px; padding: 6px 12px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> HMAC Mismatch
+                </span>
+              </div>
+            </div>
+
+            <!-- Visual Character Comparison Diff for Key -->
+            <div class="compare-card">
+              <div class="compare-card-title">
+                <span>Character-by-Character Digest Diff</span>
+                <span class="hint" style="font-size: 11px; color:#ff7b72;">Highlighted red = mismatched character</span>
+              </div>
+              <div class="diff-container" id="diffDisplayKey"></div>
+            </div>
+
+            <div class="explanation-callout">
+              <strong>Observation & Scientific Concept:</strong> HMAC depends on both the message and the secret key. Changing the key results in a completely different HMAC and causes verification to fail, protecting against impersonation.
             </div>
           </div>
 
         </div>
 
-        <div class="lab-btn-group">
-          <button type="button" class="lab-btn" id="btnRunAvalanche">Compute Avalanche Analysis</button>
-          <button type="button" class="btn-secondary" id="btnFlipSingleChar">Flip 1 Character ('d' &rarr; 'c')</button>
-          <button type="button" class="btn-secondary" id="btnAlterKeyOnly">Alter Key Only</button>
-        </div>
+      </section>
 
-        <div class="lab-card-sub" style="margin-top: 20px;">
-          <h4>Avalanche Effect Metrics</h4>
-          <div class="lab-callout">
-            <p><strong>Hamming Distance (Bit Differences):</strong> <span id="avBitDiffCount" style="font-size: 18px; font-weight: bold; color: #c2410c;">---</span></p>
-            <p><strong>Avalanche Percentage:</strong> <span id="avPercentage" style="font-size: 18px; font-weight: bold; color: #c2410c;">---</span></p>
-            <p><em>Theoretical expected cryptographic diffusion is approximately 50.0% (128 out of 256 bits).</em></p>
+      <!-- ========================================== -->
+      <!-- TAB 4: QUIZ -->
+      <!-- ========================================== -->
+      <section class="tab-pane" id="paneQuiz" role="tabpanel" aria-labelledby="tabBtnQuiz">
+        <div class="lab-card">
+          <h2 class="lab-card-title">Self-Assessment Quiz</h2>
+          <p class="lab-card-subtitle">Test your understanding of HMAC principles, verification, and cryptographic security properties.</p>
+
+          <form id="quizForm">
+            
+            <!-- Question 1 -->
+            <div class="quiz-question-card" data-q="1" data-correct="B">
+              <div class="quiz-q-title">Q1. What does HMAC primarily provide?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q1" value="A"> A. Data compression
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q1" value="B"> B. Message authentication and integrity
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q1" value="C"> C. Encryption
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q1" value="D"> D. Key generation
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ1"></div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="quiz-question-card" data-q="2" data-correct="B">
+              <div class="quiz-q-title">Q2. Which two inputs are required to generate an HMAC?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q2" value="A"> A. Message and public key
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q2" value="B"> B. Message and secret key
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q2" value="C"> C. Password and certificate
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q2" value="D"> D. Ciphertext and IV
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ2"></div>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="quiz-question-card" data-q="3" data-correct="B">
+              <div class="quiz-q-title">Q3. What happens if the message is modified after an HMAC is generated?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q3" value="A"> A. HMAC remains unchanged
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q3" value="B"> B. HMAC becomes invalid (verification fails)
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q3" value="C"> C. Message is automatically restored
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q3" value="D"> D. Key changes automatically
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ3"></div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="quiz-question-card" data-q="4" data-correct="C">
+              <div class="quiz-q-title">Q4. Which algorithm does this experiment use by default?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q4" value="A"> A. RSA
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q4" value="B"> B. AES
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q4" value="C"> C. HMAC-SHA-256
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q4" value="D"> D. Diffie-Hellman
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ4"></div>
+            </div>
+
+            <!-- Question 5 -->
+            <div class="quiz-question-card" data-q="5" data-correct="B">
+              <div class="quiz-q-title">Q5. What happens if the secret key used for verification is incorrect?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q5" value="A"> A. Verification succeeds
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q5" value="B"> B. Verification fails
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q5" value="C"> C. Message is decrypted
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q5" value="D"> D. A new key is generated automatically
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ5"></div>
+            </div>
+
+            <!-- Question 6 (Bonus In-depth) -->
+            <div class="quiz-question-card" data-q="6" data-correct="C">
+              <div class="quiz-q-title">Q6. Why is simple concatenation Hash(Key ∥ Message) vulnerable, whereas HMAC is secure?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q6" value="A"> A. Simple hash cannot process keys longer than 8 bytes
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q6" value="B"> B. Simple hash reveals the private key directly in plaintext
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q6" value="C"> C. Merkle-Damgård hashes are vulnerable to length extension attacks; HMAC's nested two-pass structure prevents this
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q6" value="D"> D. Simple hash is symmetric while HMAC is asymmetric
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ6"></div>
+            </div>
+
+            <!-- Question 7 -->
+            <div class="quiz-question-card" data-q="7" data-correct="A">
+              <div class="quiz-q-title">Q7. What are ipad and opad in HMAC construction?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q7" value="A"> A. Fixed byte constants (0x36 and 0x5C) repeated to block size, XORed with the key for inner and outer hash passes
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q7" value="B"> B. Random initialization vectors used for each HMAC computation
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q7" value="C"> C. The inner and outer padding of the message before hashing
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q7" value="D"> D. Prime numbers used in the key derivation function
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ7"></div>
+            </div>
+
+            <!-- Question 8 -->
+            <div class="quiz-question-card" data-q="8" data-correct="C">
+              <div class="quiz-q-title">Q8. What is a Length Extension Attack, and why does HMAC prevent it?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q8" value="A"> A. An attack that extends the key length; HMAC prevents it by using fixed-length keys
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q8" value="B"> B. An attack that extends the message with known data; HMAC prevents it by encrypting the message first
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q8" value="C"> C. An attack where an attacker appends data to a message and computes a valid hash without knowing the key; HMAC's nested two-pass structure (outer hash wraps inner hash) prevents this
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q8" value="D"> D. An attack that extends the hash output length; HMAC prevents it by truncating the output
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ8"></div>
+            </div>
+
+            <!-- Question 9 -->
+            <div class="quiz-question-card" data-q="9" data-correct="B">
+              <div class="quiz-q-title">Q9. In the Encrypt-then-MAC paradigm, what is the correct order of operations?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q9" value="A"> A. Compute HMAC on plaintext, then encrypt both plaintext and HMAC
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q9" value="B"> B. Encrypt plaintext to ciphertext, then compute HMAC over (IV || ciphertext); transmit IV + ciphertext + HMAC
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q9" value="C"> C. Compute HMAC on plaintext, encrypt plaintext, transmit ciphertext + HMAC
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q9" value="D"> D. Encrypt plaintext, compute HMAC on plaintext, transmit ciphertext + HMAC
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ9"></div>
+            </div>
+
+            <!-- Question 10 -->
+            <div class="quiz-question-card" data-q="10" data-correct="C">
+              <div class="quiz-q-title">Q10. What is the Avalanche Effect in HMAC, and what percentage of bit flips is expected when a single input bit changes?</div>
+              <div class="quiz-options">
+                <label class="quiz-option">
+                  <input type="radio" name="q10" value="A"> A. The output grows exponentially; ~100% bit flips
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q10" value="B"> B. The output changes slightly; ~1-5% bit flips
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q10" value="C"> C. A small input change causes ~50% of output bits to flip pseudorandomly
+                </label>
+                <label class="quiz-option">
+                  <input type="radio" name="q10" value="D"> D. The output remains unchanged; 0% bit flips
+                </label>
+              </div>
+              <div class="quiz-feedback" id="feedbackQ10"></div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 20px;">
+              <button type="submit" class="btn btn-primary" id="btnSubmitQuiz">Submit Answers</button>
+              <button type="button" class="btn btn-secondary" id="btnResetQuiz">Reset Quiz</button>
+            </div>
+
+          </form>
+
+          <div class="quiz-summary-box" id="quizSummaryBox">
+            <h3 style="font-family: var(--font-serif); font-size: 22px; color: #e5d7cc; margin-bottom: 8px;">Quiz Results</h3>
+            <p style="font-size: 16px; margin-bottom: 6px;">Your Score: <strong id="quizScoreText" style="color: #60a5fa; font-size: 20px;">0 / 10</strong></p>
+            <p id="quizScoreMessage" style="color: var(--text-muted); font-size: 14px;"></p>
           </div>
 
-          <label class="lab-form-label">Hex Digest Character Comparison (Red indicates mismatch)</label>
-          <div class="lab-diff-box" id="avHexDiffBox">Click "Compute Avalanche Analysis" to inspect diff...</div>
         </div>
-      </div>
+      </section>
 
-      <!-- PANE 3: QUIZ -->
-      <div id="paneQuiz" style="display: none;">
-        <div class="lab-callout">
-          <strong>Self-Assessment Instructions:</strong> Test your understanding of HMAC theory, RFC 2104 constants, security mechanisms, and operational properties. Select one option for each question and click <strong>Submit Answers</strong>.
-        </div>
-
-        <div id="quizContainer">
-          <!-- Dynamically populated or scripted questions -->
-        </div>
-
-        <div class="lab-btn-group">
-          <button type="button" class="lab-btn" id="btnSubmitQuiz">Submit Answers</button>
-          <button type="button" class="btn-secondary" id="btnResetQuiz">Reset Quiz</button>
-        </div>
-
-        <div class="lab-quiz-results-banner" id="quizResultsBanner">
-          <h3 style="margin-top: 0; color: #18181b;">Quiz Results</h3>
-          <p style="font-size: 18px;">Your Score: <strong id="quizScoreText" style="color: #c2410c;">0 / 10</strong></p>
-          <p id="quizScoreFeedbackText" style="color: #27272a;"></p>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- SECTION 5: REFERENCES (External links permitted with target="_blank" rel="noopener") -->
-    <section id="references" class="lab-section">
-      <span class="lab-section-tag">References</span>
-      <h2 class="lab-section-title">References &amp; Standards</h2>
-      <ul class="lab-reference-list">
-        <li class="lab-reference-item">
-          <strong>IETF RFC 2104:</strong> Bellare, M., Canetti, R., and Krawczyk, H., <em>"HMAC: Keyed-Hashing for Message Authentication"</em>, Internet Engineering Task Force, February 1997.
-          <br>
-          <a href="https://datatracker.ietf.org/doc/html/rfc2104" target="_blank" rel="noopener">https://datatracker.ietf.org/doc/html/rfc2104</a>
-        </li>
-        <li class="lab-reference-item">
-          <strong>NIST FIPS PUB 198-1:</strong> National Institute of Standards and Technology, <em>"The Keyed-Hash Message Authentication Code (HMAC)"</em>, Federal Information Processing Standards Publication 198-1, July 2008.
-          <br>
-          <a href="https://csrc.nist.gov/pubs/fips/198-1/final" target="_blank" rel="noopener">https://csrc.nist.gov/pubs/fips/198-1/final</a>
-        </li>
-        <li class="lab-reference-item">
-          <strong>NIST FIPS PUB 180-4:</strong> National Institute of Standards and Technology, <em>"Secure Hash Standard (SHS)"</em>, Federal Information Processing Standards Publication 180-4, August 2015.
-          <br>
-          <a href="https://csrc.nist.gov/pubs/fips/180-4/upd1/final" target="_blank" rel="noopener">https://csrc.nist.gov/pubs/fips/180-4/upd1/final</a>
-        </li>
-        <li class="lab-reference-item">
-          <strong>W3C Web Cryptography API Recommendation:</strong> World Wide Web Consortium, <em>"Web Cryptography API - HMAC Algorithm"</em>, January 2017.
-          <br>
-          <a href="https://www.w3.org/TR/WebCryptoAPI/" target="_blank" rel="noopener">https://www.w3.org/TR/WebCryptoAPI/</a>
-        </li>
-      </ul>
-    </section>
+    </main>
 
   </div>
 
+  <!-- JavaScript module -->
   <script src="script.js"></script>
 </body>
 </html>
